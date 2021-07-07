@@ -1,0 +1,55 @@
+clc;
+clear all;
+close all;
+loop=1; % Monte Carlo 
+M=1000000;  
+SNRdB=-10:10;
+SNR=10.^(SNRdB/10);
+Rate= zeros(1, length(SNRdB)); 
+for dB= 1: length(SNRdB)
+    dB
+    for lp= 1: loop, % start looping of frame data 
+	
+	x_inp_I=sign(rand(M,1)- 0.5); % 1 or -1 for inphase signal
+    x_inp_Q=sign(rand(M,1)- 0.5); % 1 or -1 for guadrature signal
+    x_inp=x_inp_I+i*x_inp_Q; %  1+j=00, -1+j=01, -1-j=10, 1-j=11 
+    x_inp=(1/sqrt(2))*x_inp; % normalization 
+
+	N0=1./SNR(dB);
+    sigma(dB)=sqrt(N0/2);
+    noise=(1/sqrt(2))*(sigma(dB)*randn(M,1)+i*sigma(dB)*randn(M,1));
+    y_channel=x_inp+noise; % Additive White Guassiann Noise (AWGN) 
+    
+    
+
+    y=y_channel;
+    x_out_I= sign(real(y)); % 
+    x_out_Q= sign(imag(y)); % 
+    x_out=x_out_I+i*x_out_Q;
+   
+ 
+    [err, rate]= symerr([x_inp_I;x_inp_Q], [x_out_I;x_out_Q]);
+    Rate(dB)= Rate(dB) + rate;
+    end % end for loop
+    Rate(dB)= Rate(dB)/loop; 
+                              
+end % end Monte Carlo
+
+   
+    f1 = figure(1);
+    set(f1,'color',[1 1 1]);
+    semilogy(SNRdB,Rate, 'b')
+    hold on;
+    
+    
+    
+    BER_th=(1/2)*erfc(sqrt(SNR)); % theoritical calculation for BER
+    semilogy(SNRdB,BER_th,'r-o');
+    
+    hold on;
+    axis([-10 10 0.000001  1.2]);  
+    xlabel( 'Signal-to-Noise Ratio (SNR)')
+    ylabel( 'Bit Error Rate (BER)')
+    title('Simulation QPSK transmission over noise');
+    legend('BER simulation','BER calculation')
+    grid on;
