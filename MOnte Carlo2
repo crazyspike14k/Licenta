@@ -1,0 +1,62 @@
+% *************** Simulation BER of QPSK transmission over noise *********%
+% with using Monte Carlo simulation
+% ********************* Initialization ***********************************%
+clc;
+clear all;
+close all;
+loop=1; % Monte Carlo 
+M=1000000;  % Frame length (x_1 x_2 ... x_M)
+SNRdB=-10:10; % SNR in dB
+SNR=10.^(SNRdB/10);
+Rate= zeros(1, length(SNRdB)); % 
+% ********************* Transmitter **************************************%
+for dB= 1: length(SNRdB) % start looping by SNR
+    dB
+    for lp= 1: loop, % start looping of frame data 
+	
+% ********************* QPSK signal generation ***************************%    
+	x_inp_I=sign(rand(M,1)- 0.5); % 1 or -1 for inphase signal
+    x_inp_Q=sign(rand(M,1)- 0.5); % 1 or -1 for guadrature signal
+    x_inp=x_inp_I+i*x_inp_Q; %  1+j=00, -1+j=01, -1-j=10, 1-j=11 
+    x_inp=(1/sqrt(2))*x_inp; % normalization 
+    
+% ********************* Channel ******************************************%
+	N0=1./SNR(dB);
+    sigma(dB)=sqrt(N0/2);
+    noise=(1/sqrt(2))*(sigma(dB)*randn(M,1)+i*sigma(dB)*randn(M,1));
+    y_channel=x_inp+noise; % Additive White Guassiann Noise (AWGN) 
+    
+    
+    
+% ********************* Receiver *****************************************% 
+    y=y_channel;
+    x_out_I= sign(real(y)); % 
+    x_out_Q= sign(imag(y)); % 
+    x_out=x_out_I+i*x_out_Q;
+   
+% ********************* Bit Error Rate (BER) calulation ******************%    
+    [err, rate]= symerr([x_inp_I;x_inp_Q], [x_out_I;x_out_Q]);
+    Rate(dB)= Rate(dB) + rate;
+    end % end for loop
+    Rate(dB)= Rate(dB)/loop; % Average value over Monte Carlo simulation 
+                              % loop
+end % end Monte Carlo
+% ********************* Plot the simulation result ***********************%
+   
+    f1 = figure(1);
+    set(f1,'color',[1 1 1]);
+    semilogy(SNRdB,Rate, 'b')
+    hold on;
+    
+    
+    
+    BER_th=(1/2)*erfc(sqrt(SNR)); % theoritical calculation for BER
+    semilogy(SNRdB,BER_th,'r-o');
+    
+    hold on;
+    axis([-10 10 0.000001  1.2]);  
+    xlabel( 'Signal-to-Noise Ratio (SNR)')
+    ylabel( 'Bit Error Rate (BER)')
+    title('Simulation QPSK transmission over noise');
+    legend('BER simulation','BER calculation')
+    grid on;
